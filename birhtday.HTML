@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalized Birthday Scene</title>
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts (Poppins, Dancing Script, Pacifico) -->
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Pacifico&family=Poppins:wght[300;500;700}&display=swap" rel="stylesheet">
+
+    <!-- Tone.js for Sound Generation -->
+    <script src="https://unpkg.com/tone@14.7.58/build/Tone.js"></script>
+
+    <!-- Compiled CSS (Cleaned and optimized) -->
+    <style>
+        /* --- CSS Variables - Loaded from JS CONFIG at the bottom --- */
+        :root {
+            /* These will be set dynamically by JavaScript */
+            --wood-color: #5d4037;
+            --wood-light: #8d6e63;
+            --cake-color: #fff0f5; 
+            --icing-color: #ffb7b2;
+            --main-accent: #d81b60;
+            --secondary-accent: #ffb7b2;
+            --dark-overlay: rgba(0, 0, 0, 0.85);
+            --light-wash-overlay: rgba(255, 192, 203, 0.75);
+            --flame-color: #ff9800;
+            --scarf-color: #e53935; 
+        }
+
+        /* --- Global Styles --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            cursor: default; 
+            background-color: #FFB6C1; 
+            z-index: 1;
+            user-select: none; 
+            -webkit-user-select: none; 
+            -moz-user-select: none;    
+            -ms-user-select: none;     
+        }
+
+        /* --- The Room Overlay (Default: Dark) --- */
+        #room-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--dark-overlay);
+            pointer-events: none; 
+            transition: background-color 1.5s ease, transform 0.1s ease-out; 
+            z-index: 10;
+        }
+
+        #room-overlay.lights-on {
+            background-color: var(--light-wash-overlay); 
+        }
+
+        /* --- UI Controls --- */
+        .ui-control {
+            position: absolute;
+            z-index: 100;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50px;
+            transition: all 0.3s;
+            pointer-events: auto; 
+        }
+
+        .ui-control:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        #music-btn {
+            top: 20px;
+            right: 20px;
+            font-size: 1.2rem;
+        }
+        
+        /* --- Hanging Lamp Styles --- */
+        #hanging-lamp {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px; 
+            height: 80px; 
+            z-index: 15; 
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .lamp-wire {
+            width: 2px;
+            height: 50px; 
+            background-color: #555;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 0 0 1px 1px;
+        }
+
+        .lamp-shade {
+            width: 30px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.4); 
+            border-radius: 50% 50% 10% 10%;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+            transition: all 0.5s;
+        }
+
+        .lamp-shade.on {
+            background: rgba(255, 255, 150, 0.7); 
+            box-shadow: 0 0 15px 5px #ffe066, 0 0 30px 10px rgba(255, 224, 102, 0.5); 
+        }
+
+        .lamp-shade.on::before {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: -30px;
+            right: -30px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(255, 255, 100, 0.3) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        /* --- End Lamp Styles --- */
+
+
+        /* --- The Table Scene --- */
+        .scene-container {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60%; 
+            z-index: 20;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            transition: transform 0.1s ease-out; 
+        }
+
+        .table {
+            width: 100%;
+            height: 250px;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--wood-color),
+                var(--wood-color) 20px,
+                var(--wood-light) 20px,
+                var(--wood-light) 22px
+            );
+            position: relative;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 50px;
+        }
+        
+        /* --- The Cake --- */
+        .cake-container {
+            position: relative;
+            bottom: 30px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            z-index: 30;
+            pointer-events: auto;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .cake-container:hover {
+            transform: scale(1.02);
+        }
+
+        .cake-base {
+            width: 240px; /* Increased size */
+            height: 145px; /* Increased size */
+            background: var(--cake-color);
+            border-radius: 10px 10px 0 0;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            border-bottom: 10px solid var(--icing-color);
+        }
+        
+        .cake-base::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -5px;
+            width: 250px; 
+            height: 20px;
+            background: var(--icing-color);
+            border-radius: 10px;
+        }
+
+        .cake-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Pacifico', cursive;
+            font-size: 2.5rem; 
+            color: var(--main-accent);
+            text-shadow: 1px 1px 0px white;
+            white-space: nowrap;
+        }
+
+        /* --- The Candle --- */
+        .candle {
+            width: 24px; 
+            height: 72px; 
+            background: repeating-linear-gradient(
+                45deg,
+                var(--flame-color),
+                var(--flame-color) 5px,
+                #ff9800 5px,
+                #ff9800 10px
+            );
+            position: absolute;
+            top: -72px; 
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 4px;
+            z-index: 31;
+            cursor: pointer;
+            pointer-events: auto;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .candle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -3px; 
+            right: -3px; 
+            height: 6px; 
+            background: #ffb7b2; 
+            border-radius: 50%;
+            box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+            z-index: 32;
+        }
+
+        .wick {
+            width: 5px; 
+            height: 12px; 
+            background: #333;
+            position: absolute;
+            top: -12px; 
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 33;
+        }
+
+        .flame {
+            width: 24px; 
+            height: 42px; 
+            background: radial-gradient(circle at 50% 70%, 
+                rgba(255, 255, 255, 0.9) 10%, 
+                var(--flame-color) 40%, 
+                transparent 100%
+            );
+            border-radius: 50% 50% 20% 20%;
+            position: absolute;
+            top: -50px; 
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            box-shadow: 0 0 10px var(--flame-color), 0 0 30px rgba(255, 165, 0, 0.5);
+            transition: opacity 0.5s;
+            z-index: 34;
+        }
+
+        .flame.lit {
+            opacity: 1;
+            animation: flicker 0.2s infinite alternate; 
+        }
+
+        .glow-effect {
+            position: absolute;
+            top: -70px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 350px; 
+            height: 350px; 
+            background: radial-gradient(circle, rgba(255, 165, 0, 0.4) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s;
+            z-index: 29;
+        }
+
+        .glow-effect.active {
+            opacity: 1;
+        }
+
+        /* --- The Letter (Sealed Envelope) --- */
+        .letter-closed {
+            width: 100px;
+            height: 70px;
+            background: #fcfcfc;
+            position: absolute;
+            bottom: 50px;
+            left: 20%; 
+            transform: rotate(-10deg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.3); 
+            cursor: pointer;
+            transition: transform 0.3s;
+            z-index: 25;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            border-radius: 2px;
+        }
+
+        .letter-closed:hover {
+            transform: rotate(-5deg) scale(1.1);
+        }
+
+        .letter-closed::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 0; 
+            height: 0; 
+            border-left: 50px solid transparent;
+            border-right: 50px solid transparent;
+            border-top: 35px solid var(--secondary-accent); 
+            border-radius: 0 0 2px 2px;
+        }
+
+        /* --- The Cat (New Interactive Element) --- */
+        .cat-container {
+            position: absolute;
+            bottom: 50px;
+            left: 32%; /* Positioned left of center */
+            transform: rotate(5deg);
+            z-index: 26;
+            cursor: pointer;
+            transition: transform 0.3s, filter 0.3s;
+            pointer-events: auto;
+            /* Box to hold the shadow/shape */
+            width: 80px; 
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Subtle Cat Shadow */
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3); 
+            border-radius: 50%;
+            background: transparent;
+        }
+        
+        .cat-container:hover {
+            transform: rotate(0deg) scale(1.1);
+        }
+
+        .cat-container.meowing {
+            animation: meowshake 0.1s 8 alternate; 
+            filter: drop-shadow(0 0 10px rgba(255, 255, 0, 0.5));
+        }
+
+        .cat-emoji {
+            font-size: 3rem; /* Large emoji size */
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.3));
+        }
+        
+        @keyframes meowshake {
+            from { transform: translateX(0) rotate(5deg); }
+            to { transform: translateX(2px) rotate(4deg); }
+        }
+
+        /* --- Photo Album Styles --- */
+        .photo-album {
+            width: 120px;
+            height: 180px;
+            background: #4e342e; 
+            position: absolute;
+            bottom: 30px;
+            right: 10%; 
+            left: auto;
+            transform: rotate(5deg); 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: transform 0.3s;
+            z-index: 25;
+            pointer-events: auto;
+        }
+
+        .photo-album:hover {
+            transform: rotate(2deg) scale(1.05);
+        }
+
+        .album-cover {
+            width: 100%;
+            height: 100%;
+            border: 5px solid #6d4c41; 
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Dancing Script', cursive;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.4); 
+        }
+
+        .album-title {
+            font-size: 1.2rem;
+            color: #fce4ec; 
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .album-name {
+            font-size: 1.5rem;
+            color: #ffcdd2; 
+            margin-bottom: 5px;
+        }
+
+
+        /* --- Modals (Letter and Album) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 200;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: auto;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .letter-content {
+            background: #fff8e1; 
+            width: 90%;
+            max-width: 500px;
+            padding: 3rem;
+            border-radius: 5px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.5); 
+            text-align: center;
+            position: relative;
+            transform: scale(0.8);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background-image: repeating-linear-gradient(
+                #ddd 0, #ddd 1px, 
+                transparent 1px, transparent 2em
+            );
+            background-size: 100% 2em;
+            line-height: 2em;
+            border: 1px solid #ccc;
+        }
+
+        .letter-content.open { transform: scale(1); }
+
+        .letter-content h2 {
+            font-family: 'Pacifico', cursive;
+            color: var(--main-accent);
+            margin-bottom: 1rem;
+            background: #fff8e1;
+            display: inline-block;
+            padding: 0 10px;
+        }
+
+        .letter-content p {
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 1rem;
+            background: rgba(255, 248, 225, 0.9); 
+        }
+        
+        .album-content {
+            background: #fdf6e3; 
+            width: 90%;
+            max-width: 600px;
+            height: 90%;
+            max-height: 400px;
+            padding: 2rem;
+            border-radius: 5px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4), inset 0 0 10px rgba(0,0,0,0.1); 
+            position: relative;
+            transform: scale(0.8);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Poppins', sans-serif;
+            border: 1px solid #c8c8c8;
+        }
+
+        .album-content.open { transform: scale(1); }
+
+        #album-page-text {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.4rem;
+            color: #444;
+            padding: 20px;
+            font-family: 'Dancing Script', cursive; 
+            font-size: 2rem;
+            line-height: 1.3;
+        }
+
+        .album-navigation {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding-top: 10px;
+        }
+            
+        .album-navigation button {
+            background: var(--secondary-accent); 
+            color: var(--wood-color);
+            padding: 8px 15px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+        }
+            
+        .album-navigation button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .album-navigation button:not(:disabled):hover {
+            background: var(--main-accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        #page-indicator {
+            align-self: center;
+            color: #444;
+            font-weight: 500;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #888;
+            pointer-events: auto;
+        }
+
+        .close-btn:hover { color: #333; }
+
+        @keyframes flicker {
+            0% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+            50% { transform: translateX(-50%) scale(1.05); opacity: 1; }
+            100% { transform: translateX(-50%) scale(1); opacity: 0.95; }
+        }
+
+        /* --- Balloons Styling --- */
+        #balloon-display {
+            position: absolute;
+            bottom: 350px; 
+            width: 100%;
+            height: 70%;
+            pointer-events: none;
+            transition: opacity 1s;
+            opacity: 0;
+            z-index: 25;
+        }
+
+        #balloon-display.visible {
+            opacity: 1;
+        }
+
+        .balloon-wrapper {
+            position: absolute;
+            width: 80px;
+            height: 100px;
+            transform-origin: bottom center;
+            animation: float 6s ease-in-out infinite alternate var(--float-delay);
+        }
+
+        .balloon {
+            width: 80px;
+            height: 100px;
+            background: var(--balloon-color);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.2), 0 5px 10px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 2rem;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            position: relative;
+            cursor: pointer; /* Changed to pointer */
+            pointer-events: auto;
+            transition: transform 0.3s, opacity 0.1s; /* Added opacity to transition */
+        }
+            
+        .balloon:hover {
+            transform: scale(1.1);
+        }
+        
+        /* New Popped State CSS */
+        .balloon.popped {
+            opacity: 0;
+            transform: scale(0.1);
+            pointer-events: none; /* Cannot be clicked when popped */
+        }
+        
+        .balloon::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            width: 10px;
+            height: 10px;
+            background: inherit;
+            transform: rotate(45deg);
+            z-index: 1;
+        }
+
+        .string {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1px;
+            background: #ccc;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(-1deg); }
+            100% { transform: translateY(-30px) rotate(1deg); }
+        }
+        
+        /* --- Responsiveness --- */
+        @media (max-width: 600px) {
+            .cake-base { width: 180px; height: 115px; } 
+            .cake-base::before { width: 190px; }
+            .cake-text { font-size: 1.8rem; }
+            .letter-closed { left: 10%; } 
+            .cat-container { left: 35%; bottom: 40px; } /* Adjust cat position for mobile */
+            .photo-album { right: 10%; left: auto; } 
+            .letter-content, .album-content { padding: 1.5rem; }
+            #album-page-text { font-size: 1.2rem; }
+            .balloon, .balloon-wrapper { width: 60px; height: 80px; font-size: 1.5rem; }
+            .string { height: 100px; }
+        }
+
+        /* Hide the YouTube Iframe visually */
+        #youtube-player {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            visibility: hidden;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- YOUTUBE PLAYER (Hidden) -->
+    <iframe id="youtube-player" src="" frameborder="0"></iframe>
+
+    <!-- Dark Overlay / Pink Light Wash -->
+    <div id="room-overlay"></div>
+    
+    <!-- Hanging Lamp (New Light Switch) -->
+    <div id="hanging-lamp" onclick="toggleLights()">
+        <div class="lamp-wire"></div>
+        <div id="lamp-shade" class="lamp-shade"></div>
+    </div>
+
+    <!-- Controls -->
+    <button id="music-btn" class="ui-control" onclick="toggleCandle()">
+        <i class="fas fa-music"></i>
+    </button>
+    
+    <!-- Main Scene Container for Parallax -->
+    <div class="scene-container">
+        
+        <!-- Balloon Display Container (Visible when lights are on) -->
+        <div id="balloon-display">
+            <!-- Balloons generated by JS here -->
+        </div>
+        
+        <!-- The Table -->
+        <div class="table">
+
+            <!-- The Photo Album (Right Side) -->
+            <div class="photo-album" onclick="openAlbum()">
+                <div class="album-cover">
+                    <h3 class="album-title" id="album-cover-title"></h3>
+                    <p class="album-name" id="album-cover-name"></p>
+                </div>
+            </div>
+
+            <!-- The Cat (New Interactive Element) -->
+            <div id="cat" class="cat-container" ondblclick="toggleLights()">
+                <span class="cat-emoji">🐱</span>
+            </div>
+
+            <!-- The Letter (Left Side) - NO HEART ICON -->
+            <div class="letter-closed" onclick="openLetter()">
+            </div>
+
+            <!-- The Cake (Center) -->
+            <div class="cake-container">
+                <div class="glow-effect" id="candle-glow"></div>
+                <!-- The candle toggles the flame state -->
+                <div class="candle" onclick="toggleCandle()">
+                    <div class="wick"></div>
+                    <div class="flame" id="flame"></div>
+                </div>
+                <div class="cake-base">
+                    <div class="cake-text" id="cake-name"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Letter Modal -->
+    <div class="modal-overlay" id="letter-modal" onclick="closeModal(event, 'letter')">
+        <div class="letter-content" id="letter-paper" onclick="event.stopPropagation()">
+            
+            <span class="close-btn" onclick="closeModal(event, 'letter')">&times;</span>
+            
+            <div id="letter-text-container">
+                <h2 id="letter-title"></h2>
+                <div id="letter-paragraphs"></div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <!-- Album Modal -->
+    <div class="modal-overlay" id="album-modal" onclick="closeModal(event, 'album')">
+        <div class="album-content" id="album-book" onclick="event.stopPropagation()">
+            
+            <span class="close-btn" onclick="closeModal(event, 'album')">&times;</span>
+            <div id="album-page-text"></div>
+            
+            <div class="album-navigation">
+                <button id="prev-btn" onclick="changeAlbumPage(-1)">&#9664; Prev</button>
+                <span id="page-indicator">1 / 6</span>
+                <button id="next-btn" onclick="changeAlbumPage(1)">Next &#9654;</button>
+            </div>
+            
+        </div>
+    </div>
+
+
+    <script>
+        // =========================================================================
+        //                 V V V V V V V V V V V V V V V V V V V V V
+        // -------------------------------------------------------------------------
+        //                 STEP 1: EDIT THESE CONFIGURATION VARIABLES
+        // -------------------------------------------------------------------------
+        
+        const CONFIG = {
+            // --- PERSONALIZATION ---
+            NAME_ON_CAKE: "Safae", // The name that appears on the cake
+            GIFT_GIVER_NAME: "Saad", // Your name, shown on the album cover
+
+            // --- MESSAGE & MEMORIES ---
+            LETTER_TITLE: "Happy Birthday my love, Safae ❤️🎉",
+            LETTER_PARAGRAPHS: [
+                "I wish you a day as beautiful as your heart.",
+                "You’re the best thing in my life, and I’m grateful every day for having you by my side.",
+                "I love you so much, and I hope to see you always smiling and achieving everything you dream of.",
+                "Happy Birthday, my beautiful girl ❤️✨"
+            ],
+            ALBUM_MEMORIES: [
+                "1. The time we went to the club together.",
+                "2. When you gave me the novel of Arss that I will never forget.",
+                "3. When we played basketball.",
+                "4. When I sat next to you at the table in the club.",
+                "5. When you gave me that gift and your picture when we were going to the center.",
+                "6. I love you so much and I will never leave you, and every little moment I spent with you was big in my eyes and I will never forget it."
+            ],
+
+            // --- AESTHETICS ---
+            // Find YouTube ID after 'v=' in the URL (e.g., 'dQw4w9WgXcQ' for Rick Astley)
+            YOUTUBE_VIDEO_ID: "OuTLKgPyaF0", 
+
+            // Color Theme (Hex codes)
+            COLOR_THEME: {
+                MAIN_ACCENT: "#d81b60", // Pink/Red for text (e.g., #1a73e8 for Blue, #4caf50 for Green)
+                SECONDARY_ACCENT: "#ffb7b2", // Light Pink/Icing color
+                CAKE_COLOR: "#ffffff", // Main cake color (e.g., #fff0f5 for white-pink)
+                TABLE_WOOD: "#6D4C41", // Dark wood color
+                TABLE_WOOD_LIGHT: "#8D6E63", // Light wood grain color
+                LIGHT_WASH: "rgba(255, 192, 203, 0.75)", // Room light wash (pink)
+                BALLOON_COLORS: [
+                    '#ff6b6b', '#ffa500', '#ffe66d', '#6aff97', 
+                    '#6dc4ff', '#9b59b6', '#ff9ff3', '#feca57', 
+                    '#eb4d4b', '#badc58', '#4b7bec', '#ff7f50', '#c06c84'
+                ] // Colors for the floating balloons
+            }
+        };
+
+        // -------------------------------------------------------------------------
+        //                 STEP 2: JAVASCRIPT LOGIC (NO EDITS NEEDED BELOW)
+        // -------------------------------------------------------------------------
+
+        // --- DOM Elements ---
+        const musicBtn = document.getElementById('music-btn');
+        const roomOverlay = document.getElementById('room-overlay');
+        const flame = document.getElementById('flame');
+        const candleGlow = document.getElementById('candle-glow');
+        const letterModal = document.getElementById('letter-modal');
+        const letterPaper = document.getElementById('letter-paper');
+        const sceneContainer = document.querySelector('.scene-container');
+        const albumModal = document.getElementById('album-modal');
+        const albumBook = document.getElementById('album-book');
+        const albumPageText = document.getElementById('album-page-text');
+        const pageIndicator = document.getElementById('page-indicator');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const balloonDisplay = document.getElementById('balloon-display');
+        const cakeName = document.getElementById('cake-name');
+        const albumCoverTitle = document.getElementById('album-cover-title');
+        const albumCoverName = document.getElementById('album-cover-name');
+        const letterTitleEl = document.getElementById('letter-title');
+        const letterParagraphsEl = document.getElementById('letter-paragraphs');
+        const youtubeIframe = document.getElementById('youtube-player');
+        const lampShade = document.getElementById('lamp-shade');
+        const catElement = document.getElementById('cat');
+
+
+        // --- State Variables ---
+        let isMusicPlaying = false;
+        let isCandleLit = false; 
+        let lightsOn = false;
+        let balloonsGenerated = false;
+        let currentAlbumPage = 0; 
+        
+        let catSynth; // Tone.js Synthesizer for Cat
+        let lampSynth; // Tone.js Synthesizer for Lamp (NEW)
+        let popSynth; // Tone.js Synthesizer for Balloon Pop
+        let tapSynth; // Tone.js Synthesizer for Balloon Tap
+
+        // Global map to store timeouts for each balloon (using its DOM reference)
+        const balloonTimeouts = new Map();
+
+
+        // --- TONE.JS INITIALIZATION ---
+
+        function initializeTone() {
+            // Check if Tone is available (imported via script tag)
+            if (typeof Tone === 'undefined') {
+                console.error("Tone.js not loaded.");
+                return;
+            }
+
+            // 1. Cat Sound Synth (Square wave for meow)
+            catSynth = new Tone.Synth({
+                oscillator: { type: "square" },
+                envelope: {
+                    attack: 0.05,
+                    decay: 0.2,
+                    sustain: 0.1,
+                    release: 0.5,
+                }
+            }).toDestination();
+            
+            // 2. Balloon Pop Synth (Noise Synth for sharp burst)
+            popSynth = new Tone.NoiseSynth({
+                noise: { type: "white" },
+                envelope: {
+                    attack: 0.001,
+                    decay: 0.1,
+                    sustain: 0,
+                }
+            }).toDestination();
+            
+            // 3. Balloon Tap Synth (FM Synth for a quick, bright tap)
+            tapSynth = new Tone.FMSynth({
+                modulationIndex: 1.2,
+                envelope: {
+                    attack: 0.005,
+                    decay: 0.05,
+                    sustain: 0,
+                    release: 0.1
+                },
+                modulationEnvelope: {
+                    attack: 0.001,
+                    decay: 0.02,
+                    sustain: 0,
+                    release: 0.05
+                }
+            }).toDestination();
+
+            // 4. Lamp Sound Synth (Calm, soft sine wave for a peaceful 'on/off' tone)
+            lampSynth = new Tone.Synth({
+                oscillator: { type: "sine" },
+                envelope: {
+                    attack: 0.01, // Very quick attack
+                    decay: 0.2,
+                    sustain: 0.05,
+                    release: 0.5, // Soft release
+                }
+            }).toDestination();
+
+
+            console.log("Tone.js initialized for cat, pop, tap, and lamp sounds.");
+        }
+
+        window.playCatSound = function() {
+            // Start Tone context (needed for browser security/mobile)
+            Tone.start(); 
+
+            if (!catSynth) {
+                initializeTone();
+                if (!catSynth) return;
+            }
+            
+            catSynth.triggerAttackRelease("A4", "0.2"); 
+            
+            catElement.classList.add('meowing');
+            setTimeout(() => catElement.classList.remove('meowing'), 800);
+        }
+
+        window.playLampSound = function() {
+            // Start Tone context 
+            Tone.start(); 
+
+            if (!lampSynth) {
+                initializeTone();
+                if (!lampSynth) return;
+            }
+            
+            // Trigger a soft, low note (C4) for a brief duration ("8n")
+            lampSynth.triggerAttackRelease("C4", "8n");
+        }
+        
+        window.playPopSound = function() {
+             Tone.start(); 
+             if (!popSynth) {
+                initializeTone();
+                if (!popSynth) return;
+             }
+             // Trigger the noise synth for a short pop
+             popSynth.triggerAttackRelease("16n");
+        }
+        
+        // NEW: Function to play a sound when the balloon is tapped
+        window.playTapSound = function() {
+             Tone.start(); 
+             if (!tapSynth) {
+                initializeTone();
+                if (!tapSynth) return;
+             }
+             // Trigger a short, high frequency note for a tap sound
+             tapSynth.triggerAttackRelease("C5", "32n");
+        }
+
+
+        // --- INITIALIZATION ---
+
+        function applyConfiguration() {
+            // Set CSS Variables
+            document.documentElement.style.setProperty('--main-accent', CONFIG.COLOR_THEME.MAIN_ACCENT);
+            document.documentElement.style.setProperty('--secondary-accent', CONFIG.COLOR_THEME.SECONDARY_ACCENT);
+            document.documentElement.style.setProperty('--cake-color', CONFIG.COLOR_THEME.CAKE_COLOR);
+            document.documentElement.style.setProperty('--wood-color', CONFIG.COLOR_THEME.TABLE_WOOD);
+            document.documentElement.style.setProperty('--wood-light', CONFIG.COLOR_THEME.TABLE_WOOD_LIGHT);
+            document.documentElement.style.setProperty('--light-wash-overlay', CONFIG.COLOR_THEME.LIGHT_WASH);
+
+            // Set content
+            cakeName.textContent = CONFIG.NAME_ON_CAKE;
+            albumCoverTitle.textContent = "Best moments with " + CONFIG.NAME_ON_CAKE;
+            albumCoverName.textContent = CONFIG.GIFT_GIVER_NAME;
+            letterTitleEl.textContent = CONFIG.LETTER_TITLE;
+            
+            // Populate letter paragraphs
+            letterParagraphsEl.innerHTML = CONFIG.LETTER_PARAGRAPHS.map(p => `<p>${p}</p>`).join('');
+
+            // Set music source
+            const musicSrc = `https://www.youtube.com/embed/${CONFIG.YOUTUBE_VIDEO_ID}?enablejsapi=1&controls=0&loop=1&playlist=${CONFIG.YOUTUBE_VIDEO_ID}`;
+            youtubeIframe.src = musicSrc;
+        }
+
+
+        // --- YOUTUBE PLAYER SETUP (Standard API Initialization) ---
+        let player;
+
+        window.onYouTubeIframeAPIReady = function() {
+            const iframe = document.getElementById('youtube-player');
+            player = new YT.Player(iframe, {
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        };
+
+        function onPlayerReady(event) {
+            console.log("Music Player Ready. Volume set to 50.");
+        }
+
+        // Load the YouTube Iframe API script
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+
+        // --- INTERACTION FUNCTIONS ---
+
+        function toggleMusic() {
+            if (!player || typeof player.playVideo !== 'function') {
+                console.error("Music player is not ready.");
+                return;
+            }
+
+            if (isMusicPlaying) {
+                player.pauseVideo();
+                musicBtn.innerHTML = '<i class="fas fa-music"></i>';
+                isMusicPlaying = false;
+            } else {
+                player.setVolume(50); 
+                player.playVideo();
+                musicBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                isMusicPlaying = true;
+            }
+        }
+        
+        function generateBalloons() {
+            if (balloonsGenerated) return;
+
+            const balloonPhrase = "HAPPY BIRTHDAY"; 
+            const totalBalloons = balloonPhrase.length;
+            const startPos = 10; 
+            const endPos = 90;   
+            const spacing = (endPos - startPos) / (totalBalloons - 1); 
+
+            balloonPhrase.split('').forEach((letter, index) => {
+                if (letter.trim() === '') return; 
+                
+                const color = CONFIG.COLOR_THEME.BALLOON_COLORS[index % CONFIG.COLOR_THEME.BALLOON_COLORS.length];
+                const leftPosition = startPos + (index * spacing); 
+                const floatDelay = -(index * 0.2) - (Math.random() * 0.5); 
+                const randomYOffset = Math.random() * 50; 
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'balloon-wrapper';
+                wrapper.style.left = `${leftPosition}%`;
+                wrapper.style.setProperty('--float-delay', `${floatDelay}s`);
+                wrapper.style.bottom = `${randomYOffset}px`; 
+                wrapper.style.zIndex = 30 + (totalBalloons - index); 
+                wrapper.style.height = '150px'; 
+                
+                const stringHeight = 150 - randomYOffset; 
+
+                // Inject the balloon HTML with data attributes and click handler
+                wrapper.innerHTML = `
+                    <div class="balloon" 
+                         data-click-count="0" 
+                         data-balloon-id="${index}"
+                         onclick="handleBalloonClick(this)"
+                         style="background: ${color};">${letter}</div>
+                    <div class="string" style="height: ${stringHeight}px;"></div>
+                `;
+
+                balloonDisplay.appendChild(wrapper);
+            });
+
+            balloonsGenerated = true;
+        }
+        
+        window.handleBalloonClick = function(balloonElement) {
+            // Play tap sound on every click
+            playTapSound();
+            
+            // Read and increment click count
+            let clickCount = parseInt(balloonElement.getAttribute('data-click-count') || 0);
+            clickCount++;
+            balloonElement.setAttribute('data-click-count', clickCount);
+            
+            // Provide visual feedback for the click
+            balloonElement.style.transform = `scale(${1 + clickCount * 0.05})`;
+            setTimeout(() => { balloonElement.style.transform = ''; }, 50);
+
+            if (clickCount >= 3) {
+                // POP!
+                
+                // 1. Visual change (add CSS class)
+                balloonElement.classList.add('popped');
+                
+                // 2. Sound (Pop sound, more intense than tap)
+                playPopSound();
+                
+                // 3. Clear any existing timer for this balloon
+                if (balloonTimeouts.has(balloonElement)) {
+                    clearTimeout(balloonTimeouts.get(balloonElement));
+                }
+
+                // 4. Set the 10-second revert timer
+                const timeoutId = setTimeout(() => {
+                    revertBalloon(balloonElement);
+                }, 10000); // 10 seconds
+
+                balloonTimeouts.set(balloonElement, timeoutId);
+            }
+        }
+        
+        function revertBalloon(balloonElement) {
+            // 1. Visual revert
+            balloonElement.classList.remove('popped');
+            
+            // 2. Reset click count
+            balloonElement.setAttribute('data-click-count', 0);
+            
+            // 3. Remove timeout from map
+            balloonTimeouts.delete(balloonElement);
+        }
+
+        function toggleLights() {
+            // 1. Play the calm lamp sound
+            playLampSound(); 
+            
+            // 2. Toggle the lights state
+            lightsOn = !lightsOn;
+            
+            if (lightsOn) {
+                roomOverlay.classList.add('lights-on');
+                lampShade.classList.add('on'); 
+                generateBalloons(); 
+                balloonDisplay.classList.add('visible');
+            } else {
+                roomOverlay.classList.remove('lights-on');
+                lampShade.classList.remove('on'); 
+                balloonDisplay.classList.remove('visible');
+            }
+        }
+
+        function toggleCandle() {
+            isCandleLit = !isCandleLit;
+
+            if (isCandleLit) {
+                flame.classList.add('lit');
+                candleGlow.classList.add('active');
+            } else {
+                flame.classList.remove('lit');
+                candleGlow.classList.remove('active');
+            }
+        }
+
+        function openLetter() {
+            letterModal.classList.add('show');
+            setTimeout(() => { letterPaper.classList.add('open'); }, 100);
+        }
+        
+        function openAlbum() {
+            currentAlbumPage = 0; 
+            updateAlbumPage();
+            albumModal.classList.add('show');
+            setTimeout(() => { albumBook.classList.add('open'); }, 100);
+        }
+
+        function closeModal(e, type) {
+            const modal = (type === 'letter' ? letterModal : albumModal);
+            const content = (type === 'letter' ? letterPaper : albumBook);
+
+            if (e.target === modal || e.target.classList.contains('close-btn')) {
+                e.stopPropagation(); 
+                
+                content.classList.remove('open');
+                setTimeout(() => { modal.classList.remove('show'); }, 300);
+            }
+        }
+        
+        // --- ALBUM FUNCTIONS ---
+
+        function updateAlbumPage() {
+            albumPageText.textContent = CONFIG.ALBUM_MEMORIES[currentAlbumPage];
+            pageIndicator.textContent = `${currentAlbumPage + 1} / ${CONFIG.ALBUM_MEMORIES.length}`;
+            
+            prevBtn.disabled = currentAlbumPage === 0;
+            nextBtn.disabled = currentAlbumPage === CONFIG.ALBUM_MEMORIES.length - 1;
+        }
+
+        function changeAlbumPage(direction) {
+            const newPage = currentAlbumPage + direction;
+            if (newPage >= 0 && newPage < CONFIG.ALBUM_MEMORIES.length) {
+                currentAlbumPage = newPage;
+                updateAlbumPage();
+            }
+        }
+
+
+        // --- PARALLAX LOGIC ---
+        function handleMouseMove(e) {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            const normalizedX = (e.clientX / viewportWidth) - 0.5;
+            const normalizedY = (e.clientY / viewportHeight) - 0.5;
+            
+            const moveFactorScene = 0.5; 
+            
+            const sceneX = normalizedX * moveFactorScene * 10;
+            const sceneY = normalizedY * moveFactorScene * 10; 
+            
+            roomOverlay.style.transform = `translate(${sceneX * 0.2}px, ${sceneY * 0.2}px)`;
+            sceneContainer.style.transform = `translate(${sceneX}px, ${sceneY}px)`;
+        }
+
+        window.addEventListener('load', () => {
+            applyConfiguration(); // Apply all custom settings on load
+            window.addEventListener('mousemove', handleMouseMove);
+            // Initialize Tone.js for the cat, pop, tap, and lamp sounds
+            initializeTone(); 
+        });
+
+    </script>
+    <!-- Load YouTube API asynchronously -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
